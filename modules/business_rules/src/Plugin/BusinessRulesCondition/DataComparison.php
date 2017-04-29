@@ -2,8 +2,8 @@
 
 namespace Drupal\business_rules\Plugin\BusinessRulesCondition;
 
-use Drupal\business_rules\Events\BusinessRulesEvent;
 use Drupal\business_rules\ConditionInterface;
+use Drupal\business_rules\Events\BusinessRulesEvent;
 use Drupal\business_rules\ItemInterface;
 use Drupal\business_rules\Plugin\BusinessRulesConditionPlugin;
 use Drupal\business_rules\VariablesSet;
@@ -30,7 +30,7 @@ use Drupal\Core\Form\FormStateInterface;
  */
 class DataComparison extends BusinessRulesConditionPlugin {
 
-  const CURRENT_DATA  = 'current_data';
+  const CURRENT_DATA = 'current_data';
   const ORIGINAL_DATA = 'original_data';
 
   /**
@@ -165,9 +165,15 @@ class DataComparison extends BusinessRulesConditionPlugin {
 
     foreach ($values as $value) {
       foreach ($values_to_compare as $compare) {
-        $entity_value  = strip_tags(strtolower(trim($value['value'])));
-        $compare_value = strtolower(trim($compare));
-        return $this->util->criteriaMet($entity_value, $operator, $compare_value);
+        if (isset($value['value'])) {
+          $entity_value = strip_tags(strtolower(trim($value['value'])));
+          $compare_value = strtolower(trim($compare));
+
+          return $this->util->criteriaMet($entity_value, $operator, $compare_value);
+        }
+        else {
+          return FALSE;
+        }
       }
     }
 

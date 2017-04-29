@@ -2,8 +2,8 @@
 
 namespace Drupal\business_rules\Plugin\BusinessRulesCondition;
 
-use Drupal\business_rules\Events\BusinessRulesEvent;
 use Drupal\business_rules\ConditionInterface;
+use Drupal\business_rules\Events\BusinessRulesEvent;
 use Drupal\business_rules\ItemInterface;
 use Drupal\business_rules\Plugin\BusinessRulesConditionPlugin;
 use Drupal\Core\Form\FormStateInterface;
@@ -79,11 +79,13 @@ class UserHasRole extends BusinessRulesConditionPlugin {
     $user_roles   = array_values($current_user->getRoles());
     $result       = FALSE;
 
-    if ($criteria == 'all') {
-      $result = (count(array_intersect($roles, $user_roles)) == count($roles));
-    }
-    elseif ($criteria == 'one') {
-      $result = !empty(array_intersect($user_roles, $roles));
+    if (is_array($roles) && is_array($user_roles)) {
+      if ($criteria == 'all') {
+        $result = (count(array_intersect($roles, $user_roles)) == count($roles));
+      }
+      elseif ($criteria == 'one') {
+        $result = !empty(array_intersect($user_roles, $roles));
+      }
     }
 
     return $result;

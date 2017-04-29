@@ -7,6 +7,7 @@ use Drupal\business_rules\Entity\Condition;
 use Drupal\business_rules\Entity\Variable;
 use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\ReplaceCommand;
+use Drupal\Core\Cache\Cache;
 use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Link;
@@ -81,7 +82,7 @@ abstract class ItemForm extends EntityForm {
     $form_state->set('business_rules_step', $this->step);
 
     /** @var \Drupal\business_rules\ItemInterface $item */
-    $item  = $this->entity;
+    $item = $this->entity;
     $class = get_class($item);
 
     if ($this->step === 1 && $item->isNew()) {
@@ -168,10 +169,12 @@ abstract class ItemForm extends EntityForm {
       $form['additional_fields']['#weight'] = 60;
 
       // Show available tokens replacements.
-      $form['tokens']['#markup']      = $this->getTokensLink();
-      $form['tokens']['#weight']      = 900;
-      $form['#attached']['library'][] = 'token/token';
-      $form['#attached']['library'][] = 'token/jquery.treeTable';
+      $form['tokens']['#markup'] = $this->getTokensLink();
+      $form['tokens']['#weight'] = 900;
+      if ($this->util->moduleHandler->moduleExists('token')) {
+        $form['#attached']['library'][] = 'token/token';
+        $form['#attached']['library'][] = 'token/jquery.treeTable';
+      }
 
       // Show the available variables.
       $form['variables']            = $this->util->getVariablesDetailsBox($item);
@@ -219,7 +222,7 @@ abstract class ItemForm extends EntityForm {
     if ($this->util->moduleHandler->moduleExists('token')) {
       // Show a link to a modal window with all available tokens.
       $keyvalue = $this->util->getKeyValueExpirable('token_tree');
-      $content  = $this->util->tokenTree->buildAllRenderable();
+      $content = $this->util->tokenTree->buildAllRenderable();
       $keyvalue->set('token_tree', $content);
 
       $tokens_link = Link::createFromRoute($this->t('Click here to see all available tokens. Be aware that some tokens will only works on the right context.'),
@@ -325,13 +328,13 @@ abstract class ItemForm extends EntityForm {
       $custom_item = $reflection->newInstance($definition, $definition['id'], $definition);
       $settings    = $custom_item->processSettings($settings, $item);
 
-      // Make the settings safe.
-      $this->util->applyXssInArray($settings);
-
       $item->set('settings', $settings);
       $item->setTags(explode(',', $form_state->getValue('tags')));
 
       $status = $item->save();
+      // As the item may need to be executed under a cached hook, we need to
+      // invalidate all rendered caches.
+      Cache::invalidateTags(['rendered']);
 
       switch ($status) {
         case SAVED_NEW:
@@ -420,7 +423,7 @@ abstract class ItemForm extends EntityForm {
     if ($item_definition['hasTargetField']) {
       $show_entity = TRUE;
       $show_bundle = TRUE;
-      $show_field  = TRUE;
+      $show_field = TRUE;
     }
     elseif ($item_definition['hasTargetBundle']) {
       $show_entity = TRUE;
