@@ -1,0 +1,6 @@
+rs.admin:
+  title: 'Rising Tiger Admin Page'
+  description: 'rising tiger admin settings test'
+  parent: system.admin_config_development
+  route_name: rs.content
+  weight: 100
