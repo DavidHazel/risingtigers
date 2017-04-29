@@ -265,7 +265,7 @@ abstract class BusinessRulesItemBase extends ConfigEntityBase implements ItemInt
    * {@inheritdoc}
    */
   public static function loadMultipleByType($type, array $ids = NULL) {
-    $items  = self::loadMultiple($ids);
+    $items = self::loadMultiple($ids);
     $result = [];
     /** @var \Drupal\business_rules\ItemInterface $item */
     foreach ($items as $item) {

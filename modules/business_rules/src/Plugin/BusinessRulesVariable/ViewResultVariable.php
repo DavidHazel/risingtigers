@@ -80,7 +80,7 @@ class ViewResultVariable extends BusinessRulesVariablePlugin {
    */
   public function changeDetails(Variable $variable, array &$row) {
     // Show a link to a modal window which all fields from the view.
-    $content  = $this->variableFields($variable);
+    $content = $this->variableFields($variable);
     $keyvalue = $this->util->getKeyValueExpirable('view_result_variable');
     $keyvalue->set('variableFields.' . $variable->id(), $content);
 
@@ -205,7 +205,7 @@ class ViewResultVariable extends BusinessRulesVariablePlugin {
           // table.
           $bundles = $this->bundleInfo->getBundleInfo($entity_type);
           $bundles = array_keys($bundles);
-          $bundle  = $bundles[0];
+          $bundle = $bundles[0];
 
           // Now, with the bundle info, we can load the fields definitions.
           $fields_definitions = $this->entityFieldManager->getFieldDefinitions($entity_type, $bundle);

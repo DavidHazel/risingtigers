@@ -219,7 +219,7 @@ abstract class ConditionSet extends BusinessRulesConditionPlugin {
           $key = $item->id();
 
           $listBuilder = $this->entityTypeManager->getListBuilder($item->getEntityTypeId());
-          $operations  = $listBuilder->buildOperations($item);
+          $operations = $listBuilder->buildOperations($item);
 
           $operations['#links']['remove'] = [
             'title'  => t('Remove'),

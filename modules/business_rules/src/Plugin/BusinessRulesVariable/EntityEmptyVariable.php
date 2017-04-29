@@ -70,7 +70,7 @@ class EntityEmptyVariable extends BusinessRulesVariablePlugin {
    */
   public function changeDetails(Variable $variable, array &$row) {
     // Show a link to a modal window which all fields from the Entity Variable.
-    $content  = $this->util->getVariableFieldsModalInfo($variable);
+    $content = $this->util->getVariableFieldsModalInfo($variable);
     $keyvalue = $this->util->getKeyValueExpirable('entity_empty_variable');
     $keyvalue->set('variableFields.' . $variable->id(), $content);
 

@@ -244,7 +244,7 @@ class ActionSet extends BusinessRulesActionPlugin {
           $key = $item->id();
 
           $listBuilder = $this->entityTypeManager->getListBuilder($item->getEntityTypeId());
-          $operations  = $listBuilder->buildOperations($item);
+          $operations = $listBuilder->buildOperations($item);
 
           $operations['#links']['remove'] = [
             'title'  => t('Remove'),
