@@ -1,0 +1,7 @@
+name: Rising Tigers Module
+description: hooks for Rising Tigers
+package: RS
+type: module
+core: 8.x
+
+dependencies: 

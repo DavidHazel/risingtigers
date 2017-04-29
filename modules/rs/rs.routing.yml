@@ -1,0 +1,7 @@
+rs.content:
+  path: '/hello'
+  defaults:
+    _controller: '\Drupal\rs\Controller\RSController::content'
+    _title: 'Rising Tigers Title'
+  requirements:
+    _permission: 'access content'
