@@ -45,12 +45,19 @@ function rs_theme($existing, $type, $theme, $path) {
   return $variables;
 }
 */
+function rs_theme($existing, $type, $theme, $path) {
+  return [
+    'rs_twig' => [
+      'variables' => ['test_var' => NULL],
+    ],
+  ];
+}
 
 /**
  * Implements hook_views_post_render().
  */
 function rs_views_post_render($view) {
-  if ($view->id() !== 'steps' && $view->getDisplay()->getPluginId() !== 'page') {
+  if ($view->id() !== 'steps' /* && $view->getDisplay()->getPluginId() !== 'page' */) {
     return;
   }
   $request = \Drupal::request();
@@ -63,6 +70,6 @@ function rs_views_post_render($view) {
     }
     //$new_title = $result[0]['_entity']['_values']['title'];
     $view->setTitle($new_title);
-    $route->setDefault('_title', $new_title);
+   //    $route->setDefault('_title', $new_title);
   }
 }

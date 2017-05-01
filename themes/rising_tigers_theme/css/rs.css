@@ -1,0 +1,27 @@
+.rs-step {
+    font-size: 18px;
+    font-weight: bold;
+    margin-left: 20px;
+    margin-right: 20px;
+}
+.views-field-field-icon {
+ 
+    float: left;
+}
+.views-field-body {
+	float:left;
+	margin-left: 20px;
+	width: 80%;
+    
+
+}
+.view-id-steps .view-content {
+ 
+    clear: both;
+    float: left;
+    width: 100%;
+}
+
+.rs-steps-wrapper{
+	
+}

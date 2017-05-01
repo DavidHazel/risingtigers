@@ -1,0 +1,5 @@
+# Schema for the configuration files of the Bartik theme.
+
+rising_tigers_theme.settings:
+  type: theme_settings
+  label: 'Bartik settings'
