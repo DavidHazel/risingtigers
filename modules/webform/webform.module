@@ -280,7 +280,7 @@ function webform_system_breadcrumb_alter(Breadcrumb &$breadcrumb, RouteMatchInte
   }
 
   // Fix 'Help' breadcrumb text.
-  if ($route_match->getRouteName() == 'webform.help') {
+  if ($route_match->getRouteName() == 'webform.help.video') {
     $links = $breadcrumb->getLinks();
     $link = end($links);
     $link->setText(t('Webforms'));
@@ -382,7 +382,7 @@ function webform_page_attachments(array &$attachments) {
   }
 
   // Attach codemirror and select2 library to block admin to ensure that the
-  // library is loaded by the webform block is placed using AJAX.
+  // library is loaded by the webform block is placed using Ajax.
   if (strpos($route_name, 'block.admin_display') === 0) {
     $attachments['#attached']['library'][] = 'webform/webform.block';
   }
@@ -486,7 +486,7 @@ function webform_theme() {
       'variables' => ['info' => []],
     ],
     'webform_help_video_youtube' => [
-      'variables' => ['youtube_id' => NULL],
+      'variables' => ['youtube_id' => NULL, 'autoplay' => TRUE],
     ],
 
     'webform' => [

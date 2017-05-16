@@ -9,8 +9,8 @@ dependencies:
   - 'drupal:locale'
   - 'drupal:webform'
 
-# Information added by Drupal.org packaging script on 2017-05-01
-version: '8.x-5.0-beta12+18-dev'
+# Information added by Drupal.org packaging script on 2017-05-16
+version: '8.x-5.0-beta12+60-dev'
 core: '8.x'
 project: 'webform'
-datestamp: 1493602749
+datestamp: 1494966790

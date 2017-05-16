@@ -10,13 +10,16 @@ use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\Element;
 use Drupal\file\Plugin\Field\FieldType\FileItem;
 use Drupal\webform\Entity\Webform;
 use Drupal\webform\Utility\WebformArrayHelper;
+use Drupal\webform\WebformAddonsManagerInterface;
 use Drupal\webform\WebformElementManagerInterface;
 use Drupal\webform\WebformLibrariesManagerInterface;
 use Drupal\webform\WebformSubmissionExporterInterface;
 use Drupal\webform\WebformTokenManagerInterface;
+use Drupal\webform\WebformThirdPartySettingsManagerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -60,6 +63,20 @@ class WebformAdminSettingsForm extends ConfigFormBase {
   protected $librariesManager;
 
   /**
+   * The webform third party settings manager.
+   *
+   * @var \Drupal\webform\WebformThirdPartySettingsManagerInterface
+   */
+  protected $thirdPartySettingsManager;
+
+  /**
+   * Add-ons manager.
+   *
+   * @var \Drupal\webform\WebformAddonsManagerInterface
+   */
+  protected $addonsManager;
+
+  /**
    * An array of element types.
    *
    * @var array
@@ -85,7 +102,7 @@ class WebformAdminSettingsForm extends ConfigFormBase {
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   The factory for configuration objects.
-   * @param \Drupal\Core\Extension\ModuleHandlerInterface $third_party_settings_manager
+   * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
    *   The module handler.
    * @param \Drupal\webform\WebformElementManagerInterface $element_manager
    *   The webform element manager.
@@ -95,14 +112,20 @@ class WebformAdminSettingsForm extends ConfigFormBase {
    *   The token manager.
    * @param \Drupal\webform\WebformLibrariesManagerInterface $libraries_manager
    *   The libraries manager.
+   * @param \Drupal\webform\WebformThirdPartySettingsManagerInterface $third_party_settings_manager
+   *   The webform third party settings manager.
+   * @param \Drupal\webform\WebformAddonsManagerInterface $addons_manager
+   *   The add-ons manager.
    */
-  public function __construct(ConfigFactoryInterface $config_factory, ModuleHandlerInterface $third_party_settings_manager, WebformElementManagerInterface $element_manager, WebformSubmissionExporterInterface $submission_exporter, WebformTokenManagerInterface $token_manager, WebformLibrariesManagerInterface $libraries_manager) {
+  public function __construct(ConfigFactoryInterface $config_factory, ModuleHandlerInterface $module_handler, WebformElementManagerInterface $element_manager, WebformSubmissionExporterInterface $submission_exporter, WebformTokenManagerInterface $token_manager, WebformLibrariesManagerInterface $libraries_manager, WebformThirdPartySettingsManagerInterface $third_party_settings_manager, WebformAddonsManagerInterface $addons_manager) {
     parent::__construct($config_factory);
-    $this->moduleHandler = $third_party_settings_manager;
+    $this->moduleHandler = $module_handler;
     $this->elementManager = $element_manager;
     $this->submissionExporter = $submission_exporter;
     $this->tokenManager = $token_manager;
     $this->librariesManager = $libraries_manager;
+    $this->thirdPartySettingsManager = $third_party_settings_manager;
+    $this->addonsManager = $addons_manager;
   }
 
   /**
@@ -115,7 +138,9 @@ class WebformAdminSettingsForm extends ConfigFormBase {
       $container->get('plugin.manager.webform.element'),
       $container->get('webform_submission.exporter'),
       $container->get('webform.token_manager'),
-      $container->get('webform.libraries_manager')
+      $container->get('webform.libraries_manager'),
+      $container->get('webform.third_party_settings_manager'),
+      $container->get('webform.addons_manager')
     );
   }
 
@@ -170,12 +195,12 @@ class WebformAdminSettingsForm extends ConfigFormBase {
       '#required' => TRUE,
       '#default_value' => $config->get('settings.default_form_confidential_message'),
     ];
-    $form['form']['default_form_submit_label'] = [
+    $form['form']['default_submit_button_label'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Default submit button label'),
       '#required' => TRUE,
       '#size' => 20,
-      '#default_value' => $settings['default_form_submit_label'],
+      '#default_value' => $settings['default_submit_button_label'],
     ];
     $form['form']['form_classes'] = [
       '#type' => 'webform_codemirror',
@@ -304,6 +329,18 @@ class WebformAdminSettingsForm extends ConfigFormBase {
       '#required' => TRUE,
       '#size' => 20,
       '#default_value' => $settings['default_preview_prev_button_label'],
+    ];
+    $form['preview']['default_preview_label'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Default preview label'),
+      '#required' => TRUE,
+      '#default_value' => $settings['default_preview_label'],
+    ];
+    $form['preview']['default_preview_title'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Default preview page title'),
+      '#required' => TRUE,
+      '#default_value' => $settings['default_preview_title'],
     ];
     $form['preview']['default_preview_message'] = [
       '#type' => 'webform_html_editor',
@@ -547,7 +584,7 @@ class WebformAdminSettingsForm extends ConfigFormBase {
       '#type' => 'checkbox',
       '#title' => $this->t('Allow files to be uploaded to public file system.'),
       '#description' => $this->t('Public files upload destination is dangerous for webforms that are available to anonymous and/or untrusted users.') . ' ' .
-      $this->t('For more information see: <a href="@href">DRUPAL-PSA-2016-003</a>', ['@href' => 'https://www.drupal.org/psa-2016-003']),
+      $this->t('For more information see: <a href=":href">DRUPAL-PSA-2016-003</a>', [':href' => 'https://www.drupal.org/psa-2016-003']),
       '#return_value' => TRUE,
       '#default_value' => $config->get('file.file_public'),
     ];
@@ -645,7 +682,7 @@ class WebformAdminSettingsForm extends ConfigFormBase {
     $form['mail']['default_from_mail'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Default from email'),
-      '#description' => $this->t('The default sender address for emailed webform results; often the e-mail address of the maintainer of your forms.'),
+      '#description' => $this->t('The default sender address for emailed webform results; often the email address of the maintainer of your forms.'),
       '#required' => TRUE,
       '#default_value' => $config->get('mail.default_from_mail'),
     ];
@@ -797,6 +834,13 @@ class WebformAdminSettingsForm extends ConfigFormBase {
       '#return_value' => TRUE,
       '#default_value' => $config->get('ui.dialog_disabled'),
     ];
+    $form['ui']['help_menu_disabled'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Disable help menu'),
+      '#description' => $this->t("If checked, 'How can we help you?' menu will be disabled."),
+      '#return_value' => TRUE,
+      '#default_value' => $config->get('ui.help_menu_disabled'),
+    ];
     $form['ui']['offcanvas_disabled'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Disable off-canvas system tray'),
@@ -909,6 +953,39 @@ class WebformAdminSettingsForm extends ConfigFormBase {
         ],
       ],
     ];
+
+    // Third party settings.
+    $form['third_party_settings'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Third party settings'),
+      '#description' => $this->t('Third party settings allow contrib and custom modules to define global settings that are applied to all webforms and submissions.'),
+      '#tree' => TRUE,
+    ];
+    $this->thirdPartySettingsManager->alter('webform_admin_third_party_settings_form', $form, $form_state);
+    if (!Element::children($form['third_party_settings'])) {
+      $form['third_party_settings']['message'] = [
+        '#type' => 'webform_message',
+        '#message_message' => $this->t('There are no third party settings available. Please install a contributed module that integrates with the Webform module.'),
+        '#message_type' => 'info',
+      ];
+      $form['third_party_settings']['supported'] = [
+        'title' => [
+          '#markup' => $this->t('Supported modules'),
+          '#prefix' => '<h3>',
+          '#suffix' => '</h3>',
+        ],
+        'modules' => [
+          '#theme' => 'admin_block_content',
+          '#content' => $this->addonsManager->getThirdPartySettings(),
+        ],
+      ];
+    }
+    else {
+      ksort($form['third_party_settings']);
+    }
+
+    $form['token_tree_link'] = $this->tokenManager->buildTreeLink();
+
     return parent::buildForm($form, $form_state);
   }
 
@@ -958,7 +1035,6 @@ class WebformAdminSettingsForm extends ConfigFormBase {
     ksort($excluded_types);
 
     /* Config save */
-
     $config = $this->config('webform.settings');
     $config->set('settings', $settings);
     $config->set('assets', $form_state->getValue('assets'));
@@ -972,6 +1048,7 @@ class WebformAdminSettingsForm extends ConfigFormBase {
     $config->set('test', $form_state->getValue('test'));
     $config->set('ui', $form_state->getValue('ui'));
     $config->set('libraries', $libraries);
+    $config->set('third_party_settings', $form_state->getValue('third_party_settings') ?: []);
     $config->save();
 
     /* Update paths */

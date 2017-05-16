@@ -17,6 +17,7 @@ use Drupal\webform\Element\WebformMessage;
 use Drupal\webform\Element\WebformSelectOther;
 use Drupal\webform\Plugin\WebformElement\WebformManagedFileBase;
 use Drupal\webform\Utility\WebformElementHelper;
+use Drupal\webform\Utility\WebformOptionsHelper;
 use Drupal\webform\WebformElementManagerInterface;
 use Drupal\webform\WebformHandlerBase;
 use Drupal\webform\WebformHandlerMessageInterface;
@@ -135,11 +136,11 @@ class EmailWebformHandler extends WebformHandlerBase implements WebformHandlerMe
     // Simplify the [webform_submission:values:.*] tokens.
     array_walk($settings, function (&$value, $key) {
       if (is_string($value)) {
-        $value = preg_replace('/\[webform_submission:(?:node|source_entity):([^:]+)[^]]*\]/', '[\1]', $value);
-        $value = preg_replace('/\[webform_submission:values:([^:]+)[^]]*\]/', '[\1]', $value);
-        $value = preg_replace('/\[webform_submission:([^:\]]+)[^]]*\]/', '[\1]', $value);
-        $value = preg_replace('/\[webform_role:([^:]+)\]/', '[\1]', $value);
         $value = preg_replace('/\[webform:([^:]+)\]/', '[\1]', $value);
+        $value = preg_replace('/\[webform_role:([^:]+)\]/', '[\1]', $value);
+        $value = preg_replace('/\[webform_submission:(?:node|source_entity|values):([^]]+)\]/', '[\1]', $value);
+        $value = preg_replace('/\[webform_submission:([^]]+)\]/', '[\1]', $value);
+        $value = preg_replace('/(:raw|:value)(:html)?\]/', ']', $value);
       }
     });
 
@@ -514,7 +515,14 @@ class EmailWebformHandler extends WebformHandlerBase implements WebformHandlerMe
 
     foreach ($this->configuration as $name => $value) {
       if (isset($values[$name])) {
-        $this->configuration[$name] = $values[$name];
+        // Convert options array to safe config array to prevent errors.
+        // @see https://www.drupal.org/node/2297311
+        if (preg_match('/_options$/', $name)) {
+          $this->configuration[$name] = WebformOptionsHelper::encodeConfig($values[$name]);
+        }
+        else {
+          $this->configuration[$name] = $values[$name];
+        }
       }
     }
   }
@@ -633,7 +641,7 @@ class EmailWebformHandler extends WebformHandlerBase implements WebformHandlerMe
 
     // Get emails from options.
     if ($element_has_options && $email_has_options) {
-      $email_options = $this->configuration[$configuration_name . '_options'];
+      $email_options = WebformOptionsHelper::decodeConfig($this->configuration[$configuration_name . '_options']);
 
       // Set default email address.
       if (!empty($email_options[self::DEFAULT_OPTION])) {
@@ -888,7 +896,7 @@ class EmailWebformHandler extends WebformHandlerBase implements WebformHandlerMe
     }
 
     // Preload HTML Editor and CodeMirror so that they can be properly
-    // initialized when loaded via AJAX.
+    // initialized when loaded via Ajax.
     $element['#attached']['library'][] = 'webform/webform.element.html_editor';
     $element['#attached']['library'][] = 'webform/webform.element.codemirror.text';
 
@@ -1132,18 +1140,18 @@ class EmailWebformHandler extends WebformHandlerBase implements WebformHandlerMe
       $element[$options_name] = [
         '#type' => 'webform_mapping',
         '#title' => $this->t('@title options', ['@title' => $title]),
-        '#description' => $this->t('The selected element has multiple options. You may enter e-mail addresses for each choice. When that choice is selected, an e-mail will be sent to the corresponding addresses. If a field is left blank, no e-mail will be sent for that option. You may use tokens.') . '<br/><br/>',
+        '#description' => $this->t('The selected element has multiple options. You may enter email addresses for each choice. When that choice is selected, an email will be sent to the corresponding addresses. If a field is left blank, no email will be sent for that option. You may use tokens.') . '<br/><br/>',
         '#description_display' => 'before',
         '#required' => TRUE,
         '#parents' => ['settings', $options_name],
-        '#default_value' => $this->configuration[$options_name],
+        '#default_value' => WebformOptionsHelper::decodeConfig($this->configuration[$options_name]),
 
         '#source' => $mapping_options,
         '#source__title' => $this->t('Option'),
 
         '#destination__type' => 'webform_email_multiple',
         '#destination__allow_tokens' => TRUE,
-        '#destination__title' => $this->t('E-mail addresses'),
+        '#destination__title' => $this->t('Email addresses'),
         '#destination__description' => NULL,
         '#destination__placeholder' => implode(', ', $destination_placeholde_emails),
 
@@ -1165,7 +1173,7 @@ class EmailWebformHandler extends WebformHandlerBase implements WebformHandlerMe
   }
 
   /**
-   * AJAX callback.
+   * Ajax callback.
    *
    * @param array $form
    *   An associative array containing the structure of the form.

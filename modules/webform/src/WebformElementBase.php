@@ -846,10 +846,17 @@ class WebformElementBase extends PluginBase implements WebformElementInterface {
     $item_function = 'format' . $type . 'Item';
     $items_function = 'format' . $type . 'Items';
     if ($this->hasMultipleValues($element)) {
+      // Return #delta which is used by tokens.
+      // @see _webform_token_get_submission_value()
+      if (isset($element['#delta']) && isset($value[$element['#delta']])) {
+        return $this->$item_function($element, $value[$element['#delta']], $options);
+      }
+
       $items = [];
       foreach ($value as $item) {
         $items[] = $this->$item_function($element, $item, $options);
       }
+
       return $this->$items_function($element, $items, $options);
     }
     else {
@@ -1601,6 +1608,7 @@ class WebformElementBase extends PluginBase implements WebformElementInterface {
       '#type' => 'textfield',
       '#title' => $this->t('Placeholder'),
       '#description' => $this->t('The placeholder will be shown in the element until the user starts entering a value.'),
+      '#maxlength' => 255,
     ];
     $form['form']['autocomplete'] = [
       '#type' => 'select',
@@ -1976,7 +1984,7 @@ class WebformElementBase extends PluginBase implements WebformElementInterface {
 
       // Skip Entity reference element 'selection_settings'.
       // @see \Drupal\webform\Plugin\WebformElement\WebformEntityReferenceTrait::form
-      // @todo Fix entity reference AJAX and move code WebformEntityReferenceTrait.
+      // @todo Fix entity reference Ajax and move code WebformEntityReferenceTrait.
       if (!empty($property_element['#tree']) && $property_name == 'selection_settings') {
         unset($element_properties[$property_name]);
         $property_element['#parents'] = ['properties', $property_name];
